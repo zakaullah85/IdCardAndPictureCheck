@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "IDCardFaceMatchHelper64": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\images\\ID-Card5.jpeg\" \r\n\"D:\\images\\client5.jpg\""
+    }
+  }
+}
