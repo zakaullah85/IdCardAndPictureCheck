@@ -21,17 +21,12 @@ namespace FaceMatchClient
             pictureBox3.ImageLocation = idCardPath;
             var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath);
 
-            if (!string.IsNullOrEmpty(resp.Error))
-            {
-                // show error to user
-                Console.WriteLine("Face match error: " + resp.Error);
-                return;
-            }
+         
             var r = resp.MatchedFaceRect;
             if (r == null || r.Width <= 0 || r.Height <= 0)
             {
                 MessageBox.Show("No matching face rectangle returned.");
-                return;
+
             }
             if (resp.IsSamePerson)
             {
@@ -67,8 +62,11 @@ namespace FaceMatchClient
            // MessageBox.Show($"Same person: {resp.IsSamePerson}, similarity: {resp.BestSimilarity:F3}");
             button1.Enabled = true;
             //  // Show annotated image in UI
-             var bmp =Utils.ImageConverter.Base64ToBitmap(resp.AnnotatedImageBase64);
-            bmp.Save(@"D:\images\annotated_from_client.jpg");
+            if (resp.AnnotatedImageBase64 != null)
+            {
+                var bmp = Utils.ImageConverter.Base64ToBitmap(resp.AnnotatedImageBase64);
+                bmp.Save(@"D:\images\annotated_from_client.jpg");
+            }
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
