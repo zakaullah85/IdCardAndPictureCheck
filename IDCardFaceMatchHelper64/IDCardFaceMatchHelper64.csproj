@@ -20,7 +20,7 @@
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
   </ItemGroup>
-
+<!--
   <ItemGroup>
     <None Include="models\arcface.onnx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -28,5 +28,11 @@
     <None Include="assets\haarcascade_frontalface_default.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  -->
+  <!-- Embed ONNX model + cascade as resources -->
+  <ItemGroup>
+    <EmbeddedResource Include="models\arcface.onnx" />
+    <EmbeddedResource Include="assets\haarcascade_frontalface_default.xml" />
   </ItemGroup>
 </Project>

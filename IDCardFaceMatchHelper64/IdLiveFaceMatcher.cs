@@ -12,8 +12,11 @@ namespace IDCardFaceMatchHelper64
 
         public IdLiveFaceMatcher()
         {
-            string onnxPath = Path.Combine(AppContext.BaseDirectory, "models", "arcface.onnx");
-            string cascadePath = Path.Combine(AppContext.BaseDirectory, "assets", "haarcascade_frontalface_default.xml");
+            //string onnxPath = Path.Combine(AppContext.BaseDirectory, "models", "arcface.onnx");
+            //string cascadePath = Path.Combine(AppContext.BaseDirectory, "assets", "haarcascade_frontalface_default.xml");
+
+            string onnxPath = EmbeddedResourceHelper.ExtractToTemp("arcface.onnx");
+            string cascadePath = EmbeddedResourceHelper.ExtractToTemp("haarcascade_frontalface_default.xml");
 
 
             _embedder = new ArcFaceEmbedder(onnxModelPath: onnxPath, haarCascadePath: cascadePath);
