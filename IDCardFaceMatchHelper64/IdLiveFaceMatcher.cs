@@ -46,12 +46,10 @@ namespace IDCardFaceMatchHelper64
             if (camFaces.Length == 0)
                 throw new Exception("No faces detected in camera image.");
 
-            double bestLiveSim = double.NegativeInfinity;
-            int bestLiveIndex = -1;
-            double bestSpoofConfidence = double.NegativeInfinity;
-            int bestSpoofIndex = -1;
-            double bestSpoofSim = double.NegativeInfinity;
-            double bestLiveAntiConf = 0;
+            double bestSim = double.NegativeInfinity;
+            int bestIndex = -1;
+            double antiSpoofConfidence = 0;
+            bool isLiveFace = false;
 
             using var cameraBgr = Cv2.ImRead(cameraImagePath);
             if (cameraBgr.Empty())
@@ -61,29 +59,23 @@ namespace IDCardFaceMatchHelper64
             {
                 var emb = camFaces[i].embedding;
                 double sim = ArcFaceEmbedder.CosineSimilarity(idEmb, emb);
-                var (isLive, antiConf) = _antiSpoofing.Evaluate(cameraBgr, camFaces[i].rect);
 
-                if (isLive)
+                if (sim > bestSim)
                 {
-                    if (sim > bestLiveSim)
-                    {
-                        bestLiveSim = sim;
-                        bestLiveIndex = i;
-                        bestLiveAntiConf = antiConf;
-                    }
-                }
-                else if (antiConf > bestSpoofConfidence)
-                {
-                    bestSpoofConfidence = antiConf;
-                    bestSpoofIndex = i;
-                    bestSpoofSim = sim;
+                    bestSim = sim;
+                    bestIndex = i;
                 }
             }
 
-            bool hasLiveFace = bestLiveIndex >= 0;
-            bool isSame = hasLiveFace && bestLiveSim >= threshold;
-            Rect bestRect = hasLiveFace ? camFaces[bestLiveIndex].rect
-                                        : (bestSpoofIndex >= 0 ? camFaces[bestSpoofIndex].rect : new Rect(0, 0, 0, 0));
+            Rect bestRect = bestIndex >= 0 ? camFaces[bestIndex].rect : new Rect(0, 0, 0, 0);
+            if (bestIndex >= 0)
+            {
+                var antiSpoof = _antiSpoofing.Evaluate(cameraBgr, bestRect);
+                isLiveFace = antiSpoof.isLive;
+                antiSpoofConfidence = antiSpoof.confidence;
+            }
+
+            bool isSame = bestSim >= threshold && isLiveFace;
 
             // 3. Annotate camera image in memory, return JPEG bytes
             byte[] jpegBytes;
@@ -91,10 +83,10 @@ namespace IDCardFaceMatchHelper64
             {
                 if (bestRect.Width > 0 && bestRect.Height > 0)
                 {
-                    var boxColor = hasLiveFace ? Scalar.LimeGreen : Scalar.Red;
+                    var boxColor = isLiveFace ? Scalar.LimeGreen : Scalar.Red;
                     Cv2.Rectangle(img, bestRect, boxColor, 2);
 
-                    string label = hasLiveFace ? $"Live {bestLiveAntiConf:F3}" : $"Spoof {bestSpoofConfidence:F3}";
+                    string label = isLiveFace ? $"Live {antiSpoofConfidence:F3}" : $"Spoof {antiSpoofConfidence:F3}";
                     int baseLine;
                     var textSize = Cv2.GetTextSize(label, HersheyFonts.HersheySimplex, 0.7, 1, out baseLine);
                     var textOrg = new Point(bestRect.X, bestRect.Y - 5);
@@ -102,12 +94,9 @@ namespace IDCardFaceMatchHelper64
 
                     Cv2.PutText(img, label, textOrg, HersheyFonts.HersheySimplex, 0.7, boxColor, 2);
 
-                    if (hasLiveFace)
-                    {
-                        string simLabel = $"{bestLiveSim:F3}";
-                        var simOrg = new Point(bestRect.X, textOrg.Y + textSize.Height + 5);
-                        Cv2.PutText(img, simLabel, simOrg, HersheyFonts.HersheySimplex, 0.7, Scalar.Yellow, 2);
-                    }
+                    string simLabel = $"{bestSim:F3}";
+                    var simOrg = new Point(bestRect.X, textOrg.Y + textSize.Height + 5);
+                    Cv2.PutText(img, simLabel, simOrg, HersheyFonts.HersheySimplex, 0.7, Scalar.Yellow, 2);
                 }
 
                 // Convert annotated Mat → JPEG byte[]
@@ -117,10 +106,10 @@ namespace IDCardFaceMatchHelper64
             return new FaceMatchResult
             {
                 IsSamePerson = isSame,
-                BestSimilarity = hasLiveFace ? bestLiveSim : bestSpoofSim,
+                BestSimilarity = bestSim,
                 MatchedFaceRect = bestRect,
-                IsLiveFace = hasLiveFace,
-                AntiSpoofConfidence = hasLiveFace ? bestLiveAntiConf : bestSpoofConfidence,
+                IsLiveFace = isLiveFace,
+                AntiSpoofConfidence = antiSpoofConfidence,
                 AnnotatedImageBytes = jpegBytes
             };
         }
