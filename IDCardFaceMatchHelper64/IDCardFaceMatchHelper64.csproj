@@ -34,5 +34,7 @@
   <ItemGroup>
     <EmbeddedResource Include="models\arcface.onnx" />
     <EmbeddedResource Include="assets\haarcascade_frontalface_default.xml" />
+    <EmbeddedResource Include="models\deploy_Squeeze.prototxt" />
+    <EmbeddedResource Include="models\train_add_data_iter_100000.caffemodel" />
   </ItemGroup>
 </Project>

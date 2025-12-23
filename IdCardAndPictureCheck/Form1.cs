@@ -23,7 +23,7 @@ namespace IdCardAndPictureCheck
                  );
                 System.IO.File.WriteAllBytes(@"D:\images\annotated.jpg", result.AnnotatedImageBytes);
 
-                MessageBox.Show($"Same person: {result.IsSamePerson}, similarity: {result.BestSimilarity:F3}");
+                MessageBox.Show($"Live: {result.IsLiveFace}, anti-spoof: {result.AntiSpoofConfidence:F3}, same person: {result.IsSamePerson}, similarity: {result.BestSimilarity:F3}");
             }
 
         }
