@@ -10,8 +10,8 @@ namespace IDCardFaceMatchHelper64
     {
         private readonly ArcFaceEmbedder _embedder;
         private readonly AntiSpoofingDetector _antiSpoofing;
-
-        public IdLiveFaceMatcher()
+        private readonly double _faceScaleFactor;
+        public IdLiveFaceMatcher(double faceScaleFactor = 1.5,double liveThreshold = 0.95)
         {
             //string onnxPath = Path.Combine(AppContext.BaseDirectory, "models", "arcface.onnx");
             //string cascadePath = Path.Combine(AppContext.BaseDirectory, "assets", "haarcascade_frontalface_default.xml");
@@ -23,8 +23,9 @@ namespace IDCardFaceMatchHelper64
             string antiSpoofPrototxt = EmbeddedResourceHelper.ExtractToTemp("deploy_Squeeze.prototxt");
             string antiSpoofModel = EmbeddedResourceHelper.ExtractToTemp("train_add_data_iter_100000.caffemodel");
 
-            _embedder = new ArcFaceEmbedder(onnxModelPath: onnxPath, haarCascadePath: cascadePath);
-            _antiSpoofing = new AntiSpoofingDetector(antiSpoofPrototxt, antiSpoofModel);
+            _embedder = new ArcFaceEmbedder(onnxModelPath: onnxPath, haarCascadePath: cascadePath, faceScaleFactor);
+            _antiSpoofing = new AntiSpoofingDetector(antiSpoofPrototxt, antiSpoofModel,liveThreshold);
+            _faceScaleFactor = faceScaleFactor;
         }
 
         public void Dispose()
@@ -84,20 +85,121 @@ namespace IDCardFaceMatchHelper64
                 if (bestRect.Width > 0 && bestRect.Height > 0)
                 {
                     var boxColor = isLiveFace ? Scalar.LimeGreen : Scalar.Red;
+                    var textColor = Scalar.Black;
+                    var bgColor = boxColor;
+
                     Cv2.Rectangle(img, bestRect, boxColor, 2);
 
-                    string label = isLiveFace ? $"Live {antiSpoofConfidence:F3}" : $"Spoof {antiSpoofConfidence:F3}";
-                    int baseLine;
-                    var textSize = Cv2.GetTextSize(label, HersheyFonts.HersheySimplex, 0.7, 1, out baseLine);
-                    var textOrg = new Point(bestRect.X, bestRect.Y - 5);
-                    if (textOrg.Y < textSize.Height) textOrg.Y = bestRect.Y + textSize.Height + 5;
+                    double fontScale = 0.7;
+                    int thickness = 1;
+                    int padding = 4;
+                    int gap = 6;
 
-                    Cv2.PutText(img, label, textOrg, HersheyFonts.HersheySimplex, 0.7, boxColor, 2);
+                    string labelLeft = "Scale Factor: " + _faceScaleFactor.ToString("F2");
+                    string topLabel = isLiveFace
+                        ? $"Live {antiSpoofConfidence:F3}"
+                        : $"Spoof {antiSpoofConfidence:F3}";
+                    string bottomLabel = $"Sim {bestSim:F3}";
 
-                    string simLabel = $"{bestSim:F3}";
-                    var simOrg = new Point(bestRect.X, textOrg.Y + textSize.Height + 5);
-                    Cv2.PutText(img, simLabel, simOrg, HersheyFonts.HersheySimplex, 0.7, Scalar.Yellow, 2);
+                    // ================= LEFT label (VERTICAL bottom → top) =================
+                    int leftBaseLine;
+                    var leftSize = Cv2.GetTextSize(labelLeft, HersheyFonts.HersheySimplex, fontScale, thickness, out leftBaseLine);
+
+                    // Create horizontal label mat
+                    int textW = leftSize.Width + padding * 2;
+                    int textH = leftSize.Height + leftBaseLine + padding * 2;
+
+                    using var labelMat = new Mat(textH, textW, MatType.CV_8UC3, Scalar.All(0));
+                    labelMat.SetTo(bgColor);
+
+                    Cv2.PutText(
+                        labelMat,
+                        labelLeft,
+                        new Point(padding, textH - padding - leftBaseLine),
+                        HersheyFonts.HersheySimplex,
+                        fontScale,
+                        textColor,
+                        thickness);
+
+                    // Rotate CCW (bottom → top)
+                    using var rotated = new Mat();
+                    Cv2.Rotate(labelMat, rotated, RotateFlags.Rotate90Counterclockwise);
+
+                    // Position to the left, vertically centered
+                    int leftX = bestRect.X - rotated.Width - gap;
+                    int leftY = bestRect.Y + (bestRect.Height - rotated.Height) / 2;
+
+                    // Clamp to image bounds
+                    leftX = Math.Max(0, leftX);
+                    leftY = Math.Max(0, leftY);
+
+                    var roiRect = new Rect(leftX, leftY,
+                        Math.Min(rotated.Width, img.Width - leftX),
+                        Math.Min(rotated.Height, img.Height - leftY));
+
+                    using (var roi = new Mat(img, roiRect))
+                    using (var src = new Mat(rotated, new Rect(0, 0, roiRect.Width, roiRect.Height)))
+                    {
+                        src.CopyTo(roi);
+                    }
+
+                    // ================= TOP label (centered) =================
+                    int topBaseLine;
+                    var topSize = Cv2.GetTextSize(topLabel, HersheyFonts.HersheySimplex, fontScale, thickness, out topBaseLine);
+
+                    int topX = bestRect.X + (bestRect.Width - topSize.Width) / 2;
+                    int topTextY = bestRect.Y - gap;
+
+                    int topBgY = topTextY - topSize.Height - padding;
+                    if (topBgY < 0)
+                    {
+                        topTextY = bestRect.Y + topSize.Height + padding + gap;
+                        topBgY = topTextY - topSize.Height - padding;
+                    }
+
+                    var topBg = new Rect(
+                        topX - padding,
+                        topBgY,
+                        topSize.Width + padding * 2,
+                        topSize.Height + topBaseLine + padding * 2);
+
+                    Cv2.Rectangle(img, topBg, bgColor, -1);
+                    Cv2.PutText(img, topLabel, new Point(topX, topTextY),
+                        HersheyFonts.HersheySimplex, fontScale, textColor, thickness);
+
+                    // ================= BOTTOM label (centered) =================
+                    int botBaseLine;
+                    var botSize = Cv2.GetTextSize(bottomLabel, HersheyFonts.HersheySimplex, fontScale, thickness, out botBaseLine);
+
+                    int botX = bestRect.X + (bestRect.Width - botSize.Width) / 2;
+                    int botTextY = bestRect.Y + bestRect.Height + botSize.Height + gap;
+
+                    var botBg = new Rect(
+                        botX - padding,
+                        botTextY - botSize.Height - padding,
+                        botSize.Width + padding * 2,
+                        botSize.Height + botBaseLine + padding * 2);
+
+                    if (botBg.Bottom > img.Rows)
+                    {
+                        botTextY = bestRect.Y + bestRect.Height - gap;
+                        botBg = new Rect(
+                            botX - padding,
+                            botTextY - botSize.Height - padding,
+                            botSize.Width + padding * 2,
+                            botSize.Height + botBaseLine + padding * 2);
+                    }
+
+                    Cv2.Rectangle(img, botBg, bgColor, -1);
+                    Cv2.PutText(img, bottomLabel, new Point(botX, botTextY),
+                        HersheyFonts.HersheySimplex, fontScale, textColor, thickness);
                 }
+
+
+
+
+
+
 
                 // Convert annotated Mat → JPEG byte[]
                 jpegBytes = img.ImEncode(".jpg");

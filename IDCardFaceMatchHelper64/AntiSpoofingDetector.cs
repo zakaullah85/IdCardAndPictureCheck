@@ -10,8 +10,8 @@ namespace IDCardFaceMatchHelper64
         private readonly Net _net;
         private readonly Size _inputSize = new Size(227, 227);
         private readonly Scalar _mean = new Scalar(90.0, 198.0, 121.0);
-
-        public AntiSpoofingDetector(string prototxtPath, string caffemodelPath)
+        private readonly double _threshold;
+        public AntiSpoofingDetector(string prototxtPath, string caffemodelPath, double threshold = 0.95)
         {
             if (!File.Exists(prototxtPath))
                 throw new FileNotFoundException("Anti-spoofing prototxt not found.", prototxtPath);
@@ -19,6 +19,7 @@ namespace IDCardFaceMatchHelper64
                 throw new FileNotFoundException("Anti-spoofing caffemodel not found.", caffemodelPath);
 
             _net = CvDnn.ReadNetFromCaffe(prototxtPath, caffemodelPath);
+            _threshold = threshold;
         }
 
         public void Dispose()
@@ -42,14 +43,14 @@ namespace IDCardFaceMatchHelper64
 
             if (liveExpanded && !liveOriginal)
             {
-                if (confExpanded > confOriginal && confExpanded > 0.95)
+                if (confExpanded > confOriginal && confExpanded > _threshold)
                     return (true, confExpanded);
                 return (false, confOriginal);
             }
 
             if (!liveExpanded && liveOriginal)
             {
-                if (confOriginal > confExpanded && confOriginal > 0.95)
+                if (confOriginal > confExpanded && confOriginal > _threshold)
                     return (true, confOriginal);
                 return (false, confExpanded);
             }

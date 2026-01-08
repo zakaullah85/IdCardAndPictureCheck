@@ -8,6 +8,9 @@ public static class FaceMatchService
         string helperExePath,
         string idCardImagePath,
         string cameraImagePath,
+        double faceScaleFactor,
+        double threshold,
+        double liveThreshold,
         int timeoutMs = 30_000) // 30s safety timeout
     {
         if (!File.Exists(helperExePath))
@@ -27,6 +30,9 @@ public static class FaceMatchService
         // full absolute paths are safer
         psi.ArgumentList.Add(Path.GetFullPath(idCardImagePath));
         psi.ArgumentList.Add(Path.GetFullPath(cameraImagePath));
+        psi.ArgumentList.Add(threshold.ToString());
+        psi.ArgumentList.Add(faceScaleFactor.ToString());
+        psi.ArgumentList.Add(liveThreshold.ToString());
 
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
 

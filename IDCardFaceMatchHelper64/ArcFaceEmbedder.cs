@@ -13,11 +13,13 @@ public class ArcFaceEmbedder : IDisposable
     private readonly Size _inputSize = new Size(112, 112); // ArcFace expected size
     private readonly string _inputName;
     private readonly string _outputName;
+    private readonly double _faceScaleFactor;
 
     // Adjust default paths as needed
     public ArcFaceEmbedder(
         string onnxModelPath = @"models\arcface.onnx",
-        string haarCascadePath = @"assets\haarcascade_frontalface_default.xml")
+        string haarCascadePath = @"assets\haarcascade_frontalface_default.xml"
+, double faceScaleFactor = 1.5)
     {
         if (!File.Exists(onnxModelPath))
             throw new FileNotFoundException("ArcFace ONNX model not found.", onnxModelPath);
@@ -31,6 +33,7 @@ public class ArcFaceEmbedder : IDisposable
         // Use real names from model so we don't hardcode "data" / "fc1"
         _inputName = _session.InputMetadata.Keys.First();
         _outputName = _session.OutputMetadata.Keys.First();
+        _faceScaleFactor = faceScaleFactor;
     }
 
     public void Dispose()
@@ -100,7 +103,7 @@ public class ArcFaceEmbedder : IDisposable
 
         var faces = _faceCascade.DetectMultiScale(
             gray,
-            scaleFactor: 1.3,
+            scaleFactor: _faceScaleFactor,
             minNeighbors: 4,
             flags: 0,
             minSize: new Size(60, 60));
@@ -119,7 +122,7 @@ public class ArcFaceEmbedder : IDisposable
 
         var faces = _faceCascade.DetectMultiScale(
             gray,
-            scaleFactor: 1.3,
+            scaleFactor: _faceScaleFactor,
             minNeighbors: 4,
             flags: 0,
             minSize: new Size(60, 60));
