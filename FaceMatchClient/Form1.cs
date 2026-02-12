@@ -15,23 +15,37 @@ namespace FaceMatchClient
         {
             button1.Enabled = false;
             string helperExe = @"C:\Users\zakau\source\repos\IdCardAndPictureCheck\IDCardFaceMatchHelper64\bin\Release\net9.0\publish\win-x64\IDCardFaceMatchHelper64.exe";
-            string idCardPath = @"D:\images\ID-Card2.jpeg";
-            string cameraPath = @"D:\images\client2-1.jpeg";
+            string idCardPath = @"D:\images\ID-card1.jpeg";
+            string cameraPath = @"D:\images\client1.jpeg";
             pictureBox2.ImageLocation = cameraPath;
             pictureBox3.ImageLocation = idCardPath;
-            var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath);
+            double faceScaleFactor = 0.9;
+            double threshold = 0.5;
+            double liveThreshold = 0.95;
+        retryFaceMatch:
+            var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath,faceScaleFactor,threshold,liveThreshold);
 
-         
+
             var r = resp.MatchedFaceRect;
             if (r == null || r.Width <= 0 || r.Height <= 0)
             {
+                if (faceScaleFactor < 1.5)
+                {
+                    faceScaleFactor = faceScaleFactor + 0.1;
+                    goto retryFaceMatch;
+                }
                 MessageBox.Show("No matching face rectangle returned.");
 
+            }
+            if (faceScaleFactor < 1.5 && !resp.IsSamePerson)
+            {
+                faceScaleFactor = faceScaleFactor + 0.1;
+                goto retryFaceMatch;
             }
             if (resp.IsSamePerson)
             {
 
-              
+
 
                 Rectangle faceRect = new Rectangle(r.X, r.Y, r.Width, r.Height);
 
@@ -59,7 +73,7 @@ namespace FaceMatchClient
             {
                 pictureBox1.Image = null;
             }
-           // MessageBox.Show($"Same person: {resp.IsSamePerson}, similarity: {resp.BestSimilarity:F3}");
+            // MessageBox.Show($"Same person: {resp.IsSamePerson}, similarity: {resp.BestSimilarity:F3}");
             button1.Enabled = true;
             //  // Show annotated image in UI
             if (resp.AnnotatedImageBase64 != null)

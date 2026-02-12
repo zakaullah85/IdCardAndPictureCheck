@@ -7,6 +7,8 @@ namespace FaceMatchClient.DTOs
         public bool IsSamePerson { get; set; }
         public double BestSimilarity { get; set; }
         public FaceRect MatchedFaceRect { get; set; }
+        public bool IsLiveFace { get; set; }
+        public double AntiSpoofConfidence { get; set; }
         public string AnnotatedImageBase64 { get; set; }
         public string Error { get; set; }
     }

@@ -8,6 +8,9 @@ public static class FaceMatchService
         string helperExePath,
         string idCardImagePath,
         string cameraImagePath,
+        double faceScaleFactor,
+        double faceRecognitionThreshold,
+        double liveThreshold,
         int timeoutMs = 30_000) // 30s safety timeout
     {
         if (!File.Exists(helperExePath))
@@ -27,6 +30,9 @@ public static class FaceMatchService
         // full absolute paths are safer
         psi.ArgumentList.Add(Path.GetFullPath(idCardImagePath));
         psi.ArgumentList.Add(Path.GetFullPath(cameraImagePath));
+        psi.ArgumentList.Add(faceRecognitionThreshold.ToString());
+        psi.ArgumentList.Add(faceScaleFactor.ToString());
+        psi.ArgumentList.Add(liveThreshold.ToString());
 
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
 
@@ -40,7 +46,7 @@ public static class FaceMatchService
         var exitTask = process.WaitForExitAsync();
 
         // optional timeout
-        var timeoutTask = Task.Delay(timeoutMs);
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
         var finished = await Task.WhenAny(Task.WhenAll(stdoutTask, stderrTask, exitTask), timeoutTask);
 
         if (finished == timeoutTask)

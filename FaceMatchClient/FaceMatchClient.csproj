@@ -24,4 +24,35 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="IDFaceMatchHelper\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.pdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\onnxruntime.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\onnxruntime.lib">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\onnxruntime_providers_shared.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\onnxruntime_providers_shared.lib">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\OpenCvSharpExtern.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="IDFaceMatchHelper\win-x64\opencv_videoio_ffmpeg4110_64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

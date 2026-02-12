@@ -18,6 +18,8 @@ namespace IDCardFaceMatchHelper64
         public bool IsSamePerson { get; set; }
         public double BestSimilarity { get; set; }
         public FaceRect MatchedFaceRect { get; set; }
+        public bool IsLiveFace { get; set; }
+        public double AntiSpoofConfidence { get; set; }
         public string AnnotatedImageBase64 { get; set; }
         public string Error { get; set; }
     }
@@ -26,7 +28,7 @@ namespace IDCardFaceMatchHelper64
     {
         static int Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length < 5)
             {
                 var errorResp = new FaceMatchResponse
                 {
@@ -34,7 +36,7 @@ namespace IDCardFaceMatchHelper64
                     BestSimilarity = 0,
                     MatchedFaceRect = null,
                     AnnotatedImageBase64 = null,
-                    Error = "Usage: IDCardFaceMatchHelper64 <idCardPath> <cameraImagePath>"
+                    Error = "Usage: IDCardFaceMatchHelper64 <idCardPath> <cameraImagePath> <threshhold> <faceScaleFactor> <liveThreshold>"
                 };
 
                 Console.WriteLine(
@@ -45,7 +47,9 @@ namespace IDCardFaceMatchHelper64
 
             string idCardPath = args[0];
             string cameraImagePath = args[1];
-
+            double threshold = double.Parse(args[2]);
+            double faceScaleFactor = double.Parse(args[3]);
+            double liveThreshold = double.Parse(args[4]);
             try
             {
                 if (!File.Exists(idCardPath))
@@ -54,12 +58,12 @@ namespace IDCardFaceMatchHelper64
                 if (!File.Exists(cameraImagePath))
                     throw new FileNotFoundException("Camera image not found.", cameraImagePath);
 
-                using var matcher = new IdLiveFaceMatcher(); // uses EmbeddedResourceHelper internally
+                using var matcher = new IdLiveFaceMatcher(faceScaleFactor,liveThreshold); // uses EmbeddedResourceHelper internally
 
                 var result = matcher.MatchIdToCamera(
                     idCardPath: idCardPath,
                     cameraImagePath: cameraImagePath,
-                    threshold: 0.40);
+                    threshold: threshold);
 
                 string base64 = result.AnnotatedImageBytes != null
                     ? Convert.ToBase64String(result.AnnotatedImageBytes)
@@ -75,6 +79,8 @@ namespace IDCardFaceMatchHelper64
                     IsSamePerson = result.IsSamePerson,
                     BestSimilarity = result.BestSimilarity,
                     MatchedFaceRect = rectDto,
+                    IsLiveFace = result.IsLiveFace,
+                    AntiSpoofConfidence = result.AntiSpoofConfidence,
                     AnnotatedImageBase64 = base64,
                     Error = null
                 };

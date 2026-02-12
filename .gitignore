@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/FaceMatchClient/IDFaceMatchHelper/win-x64
+/FaceMatchClient/IDFaceMatchHelper/win-x64/IDCardFaceMatchHelper64.exe
+/FaceMatchClient/IDFaceMatchHelper/win-x64/OpenCvSharpExtern.dll
