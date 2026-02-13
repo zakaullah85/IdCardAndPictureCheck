@@ -15,13 +15,13 @@ namespace FaceMatchClient
         {
             button1.Enabled = false;
             string helperExe = @"D:\Projects\IdCardAndPictureCheck\FaceMatchClient\IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.exe";
-            string idCardPath = @"D:\images\ID-card3.jpeg";
-            string cameraPath = @"D:\images\client2.jpeg";
+            string idCardPath = @"D:\images\ID-card.jpeg";
+            string cameraPath = @"D:\images\spoof5.jpeg";
             pictureBox2.ImageLocation = cameraPath;
             pictureBox3.ImageLocation = idCardPath;
             double faceConfThreshold = 0.5;
-            double threshold = 0.5;
-            double liveThreshold = 0.96;
+            double threshold = 0.52;
+            double liveThreshold = 0.999999;
 
             var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath, faceConfThreshold, threshold,liveThreshold);
 

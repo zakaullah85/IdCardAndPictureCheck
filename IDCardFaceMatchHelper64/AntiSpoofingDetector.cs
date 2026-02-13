@@ -10,8 +10,11 @@ namespace IDCardFaceMatchHelper64
         private readonly Net _net;
         private readonly Size _inputSize = new Size(227, 227);
         private readonly Scalar _mean = new Scalar(90.0, 198.0, 121.0);
-        private readonly double _threshold;
-        public AntiSpoofingDetector(string prototxtPath, string caffemodelPath, double threshold = 0.95)
+
+     
+        private readonly double _strongTrueThreshold;
+
+        public AntiSpoofingDetector(string prototxtPath, string caffemodelPath, double strongTrueThreshold = 0.95)
         {
             if (!File.Exists(prototxtPath))
                 throw new FileNotFoundException("Anti-spoofing prototxt not found.", prototxtPath);
@@ -19,43 +22,62 @@ namespace IDCardFaceMatchHelper64
                 throw new FileNotFoundException("Anti-spoofing caffemodel not found.", caffemodelPath);
 
             _net = CvDnn.ReadNetFromCaffe(prototxtPath, caffemodelPath);
-            _threshold = threshold;
+            _strongTrueThreshold = strongTrueThreshold;
         }
 
-        public void Dispose()
-        {
-            _net?.Dispose();
-        }
+        public void Dispose() => _net?.Dispose();
 
-        double Fuse(double confExpanded, double confOriginal, double wOriginal = 0.7)
-        {
-            wOriginal = Math.Clamp(wOriginal, 0.0, 1.0);
-            double wExpanded = 1.0 - wOriginal;
-            return wExpanded * confExpanded + wOriginal * confOriginal;
-        }
-
+        // evaluate expanded and original, then apply the same rule tree.
         public (bool isLive, double confidence) Evaluate(Mat bgrImage, Rect faceRect)
         {
             if (bgrImage.Empty() || faceRect.Width <= 0 || faceRect.Height <= 0)
                 return (false, 0);
 
             var expanded = ExpandRect(faceRect, bgrImage.Width, bgrImage.Height, 0.4);
-            var clamped = ClampRect(faceRect, bgrImage.Width, bgrImage.Height);
+            var original = ClampRect(faceRect, bgrImage.Width, bgrImage.Height);
 
-            var (_, confExpanded) = Classify(bgrImage, expanded);
-            var (_, confOriginal) = Classify(bgrImage, clamped);
+            var exp = Classify(bgrImage, expanded);
+            var ori = Classify(bgrImage, original);
 
-            double fused = Fuse(confExpanded, confOriginal, wOriginal: 0.7);
+            // if both "true" => true, conf=(conf+conf_ori)/2
+            if (exp.IsLive && ori.IsLive)
+            {
+                double avg = (exp.Confidence + ori.Confidence) / 2.0;
+                return (true, avg);
+            }
 
-            bool isLive = fused > _threshold;
+            // if expanded true, original false
+            if (exp.IsLive && !ori.IsLive)
+            {
+                // Accept only if expanded is stronger and very confident (>0.95), else reject using false confidence
+                if (exp.Confidence > ori.Confidence && exp.Confidence > _strongTrueThreshold)
+                    return (true, exp.Confidence);
 
-            return (isLive, fused);
+                return (false, ori.Confidence);
+            }
+
+            // if expanded false, original true
+            if (!exp.IsLive && ori.IsLive)
+            {
+                // Accept only if original is stronger and very confident (>0.95), else reject using false confidence
+                if (ori.Confidence > exp.Confidence && ori.Confidence > _strongTrueThreshold)
+                    return (true, ori.Confidence);
+
+                return (false, exp.Confidence);
+            }
+
+            // both false => false, conf=(conf+conf_ori)/2
+            {
+                double avg = (exp.Confidence + ori.Confidence) / 2.0;
+                return (false, avg);
+            }
         }
 
-        private (bool isLive, double confidence) Classify(Mat bgrImage, Rect rect)
+        // Return BOTH predicted class and confidence (max prob), like the C++ code.
+        private ClassificationResult Classify(Mat bgrImage, Rect rect)
         {
             if (rect.Width <= 0 || rect.Height <= 0)
-                return (false, 0);
+                return new ClassificationResult(false, 0);
 
             using var roi = new Mat(bgrImage, rect).Clone();
             using var resized = new Mat();
@@ -63,15 +85,20 @@ namespace IDCardFaceMatchHelper64
 
             using var blob = CvDnn.BlobFromImage(resized, 1.0, _inputSize, _mean, swapRB: false, crop: false);
             _net.SetInput(blob);
+
             using var prob = _net.Forward();
 
+            // Flatten to 1xN (same idea as prob.reshape(1,1) in C++)
             using var flat = prob.Reshape(1, 1);
-            Cv2.MinMaxLoc(flat, out _, out double maxVal, out _, out Point maxLoc);
 
-            int classId = maxLoc.X;
+            Cv2.MinMaxLoc(flat, out _, out double maxVal, out _, out Point maxLoc);
+            int classId = maxLoc.X; // 0 => false, 1 => true (same as C++ classes vector)
+
             bool isLive = classId == 1;
-            return (isLive, maxVal);
+            return new ClassificationResult(isLive, maxVal);
         }
+
+        private readonly record struct ClassificationResult(bool IsLive, double Confidence);
 
         private static Rect ExpandRect(Rect rect, int imgW, int imgH, double padFraction)
         {

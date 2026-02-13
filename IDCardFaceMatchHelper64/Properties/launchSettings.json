@@ -2,7 +2,7 @@
   "profiles": {
     "IDCardFaceMatchHelper64": {
       "commandName": "Project",
-      "commandLineArgs": "\"D:\\images\\ID-Card3.jpeg\" \r\n\"D:\\images\\client2.jpeg\"\r\n\"0.5\"\r\n\"0.5\"\r\n\"0.99\""
+      "commandLineArgs": "\"D:\\images\\ID-Card.jpeg\" \r\n\"D:\\images\\spoof5.jpeg\"\r\n\"0.5\"\r\n\"0.5\"\r\n\"0.999999\""
     }
   }
 }
