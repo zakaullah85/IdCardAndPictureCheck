@@ -14,34 +14,26 @@ namespace FaceMatchClient
         private async void button1_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
-            string helperExe = @"C:\Users\zakau\source\repos\IdCardAndPictureCheck\IDCardFaceMatchHelper64\bin\Release\net9.0\publish\win-x64\IDCardFaceMatchHelper64.exe";
-            string idCardPath = @"D:\images\ID-card1.jpeg";
-            string cameraPath = @"D:\images\client1.jpeg";
+            string helperExe = @"D:\Projects\IdCardAndPictureCheck\FaceMatchClient\IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.exe";
+            string idCardPath = @"D:\images\ID-card3.jpeg";
+            string cameraPath = @"D:\images\client2.jpeg";
             pictureBox2.ImageLocation = cameraPath;
             pictureBox3.ImageLocation = idCardPath;
-            double faceScaleFactor = 0.9;
+            double faceConfThreshold = 0.5;
             double threshold = 0.5;
-            double liveThreshold = 0.95;
-        retryFaceMatch:
-            var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath,faceScaleFactor,threshold,liveThreshold);
+            double liveThreshold = 0.96;
+
+            var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath, faceConfThreshold, threshold,liveThreshold);
 
 
             var r = resp.MatchedFaceRect;
             if (r == null || r.Width <= 0 || r.Height <= 0)
             {
-                if (faceScaleFactor < 1.5)
-                {
-                    faceScaleFactor = faceScaleFactor + 0.1;
-                    goto retryFaceMatch;
-                }
+              
                 MessageBox.Show("No matching face rectangle returned.");
 
             }
-            if (faceScaleFactor < 1.5 && !resp.IsSamePerson)
-            {
-                faceScaleFactor = faceScaleFactor + 0.1;
-                goto retryFaceMatch;
-            }
+           
             if (resp.IsSamePerson)
             {
 

@@ -8,7 +8,7 @@ public static class FaceMatchService
         string helperExePath,
         string idCardImagePath,
         string cameraImagePath,
-        double faceScaleFactor,
+        double faceConfThreshold,
         double faceRecognitionThreshold,
         double liveThreshold,
         int timeoutMs = 30_000) // 30s safety timeout
@@ -31,7 +31,7 @@ public static class FaceMatchService
         psi.ArgumentList.Add(Path.GetFullPath(idCardImagePath));
         psi.ArgumentList.Add(Path.GetFullPath(cameraImagePath));
         psi.ArgumentList.Add(faceRecognitionThreshold.ToString());
-        psi.ArgumentList.Add(faceScaleFactor.ToString());
+        psi.ArgumentList.Add(faceConfThreshold.ToString());
         psi.ArgumentList.Add(liveThreshold.ToString());
 
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };

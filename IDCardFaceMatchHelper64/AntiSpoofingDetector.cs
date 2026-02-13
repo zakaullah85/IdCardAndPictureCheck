@@ -27,6 +27,13 @@ namespace IDCardFaceMatchHelper64
             _net?.Dispose();
         }
 
+        double Fuse(double confExpanded, double confOriginal, double wOriginal = 0.7)
+        {
+            wOriginal = Math.Clamp(wOriginal, 0.0, 1.0);
+            double wExpanded = 1.0 - wOriginal;
+            return wExpanded * confExpanded + wOriginal * confOriginal;
+        }
+
         public (bool isLive, double confidence) Evaluate(Mat bgrImage, Rect faceRect)
         {
             if (bgrImage.Empty() || faceRect.Width <= 0 || faceRect.Height <= 0)
@@ -35,27 +42,14 @@ namespace IDCardFaceMatchHelper64
             var expanded = ExpandRect(faceRect, bgrImage.Width, bgrImage.Height, 0.4);
             var clamped = ClampRect(faceRect, bgrImage.Width, bgrImage.Height);
 
-            var (liveExpanded, confExpanded) = Classify(bgrImage, expanded);
-            var (liveOriginal, confOriginal) = Classify(bgrImage, clamped);
+            var (_, confExpanded) = Classify(bgrImage, expanded);
+            var (_, confOriginal) = Classify(bgrImage, clamped);
 
-            if (liveExpanded && liveOriginal)
-                return (true, (confExpanded + confOriginal) / 2.0);
+            double fused = Fuse(confExpanded, confOriginal, wOriginal: 0.7);
 
-            if (liveExpanded && !liveOriginal)
-            {
-                if (confExpanded > confOriginal && confExpanded > _threshold)
-                    return (true, confExpanded);
-                return (false, confOriginal);
-            }
+            bool isLive = fused > _threshold;
 
-            if (!liveExpanded && liveOriginal)
-            {
-                if (confOriginal > confExpanded && confOriginal > _threshold)
-                    return (true, confOriginal);
-                return (false, confExpanded);
-            }
-
-            return (false, (confExpanded + confOriginal) / 2.0);
+            return (isLive, fused);
         }
 
         private (bool isLive, double confidence) Classify(Mat bgrImage, Rect rect)

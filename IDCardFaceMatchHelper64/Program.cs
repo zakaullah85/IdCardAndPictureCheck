@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.IO;
 using System.Text.Json;
 
@@ -36,20 +35,19 @@ namespace IDCardFaceMatchHelper64
                     BestSimilarity = 0,
                     MatchedFaceRect = null,
                     AnnotatedImageBase64 = null,
-                    Error = "Usage: IDCardFaceMatchHelper64 <idCardPath> <cameraImagePath> <threshhold> <faceScaleFactor> <liveThreshold>"
+                    Error = "Usage: IDCardFaceMatchHelper64 <idCardPath> <cameraImagePath> <threshold> <faceConfThreshold> <liveThreshold>"
                 };
 
-                Console.WriteLine(
-                    JsonSerializer.Serialize(errorResp, FaceMatchJsonContext.Default.FaceMatchResponse));
-
+                Console.WriteLine(JsonSerializer.Serialize(errorResp, FaceMatchJsonContext.Default.FaceMatchResponse));
                 return 1;
             }
 
             string idCardPath = args[0];
             string cameraImagePath = args[1];
             double threshold = double.Parse(args[2]);
-            double faceScaleFactor = double.Parse(args[3]);
+            double faceConfThreshold = double.Parse(args[3]);
             double liveThreshold = double.Parse(args[4]);
+
             try
             {
                 if (!File.Exists(idCardPath))
@@ -58,12 +56,9 @@ namespace IDCardFaceMatchHelper64
                 if (!File.Exists(cameraImagePath))
                     throw new FileNotFoundException("Camera image not found.", cameraImagePath);
 
-                using var matcher = new IdLiveFaceMatcher(faceScaleFactor,liveThreshold); // uses EmbeddedResourceHelper internally
+                using var matcher = new IdLiveFaceMatcher(faceConfThreshold: faceConfThreshold, liveThreshold: liveThreshold);
 
-                var result = matcher.MatchIdToCamera(
-                    idCardPath: idCardPath,
-                    cameraImagePath: cameraImagePath,
-                    threshold: threshold);
+                var result = matcher.MatchIdToCamera(idCardPath, cameraImagePath, threshold);
 
                 string base64 = result.AnnotatedImageBytes != null
                     ? Convert.ToBase64String(result.AnnotatedImageBytes)
@@ -85,9 +80,7 @@ namespace IDCardFaceMatchHelper64
                     Error = null
                 };
 
-                Console.WriteLine(
-                    JsonSerializer.Serialize(resp, FaceMatchJsonContext.Default.FaceMatchResponse));
-
+                Console.WriteLine(JsonSerializer.Serialize(resp, FaceMatchJsonContext.Default.FaceMatchResponse));
                 return 0;
             }
             catch (Exception ex)
@@ -101,9 +94,7 @@ namespace IDCardFaceMatchHelper64
                     Error = ex.Message
                 };
 
-                Console.WriteLine(
-                    JsonSerializer.Serialize(errorResp, FaceMatchJsonContext.Default.FaceMatchResponse));
-
+                Console.WriteLine(JsonSerializer.Serialize(errorResp, FaceMatchJsonContext.Default.FaceMatchResponse));
                 return 2;
             }
         }
