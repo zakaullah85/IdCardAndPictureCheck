@@ -1,4 +1,6 @@
-﻿using IDCardFaceMatchHelper64.DTOs;
+﻿using IDCardFaceMatchHelper64.Detectors;
+
+using IDCardFaceMatchHelper64.DTOs;
 using IDCardFaceMatchHelper64.Helper;
 using OpenCvSharp;
 using System;
@@ -10,6 +12,7 @@ namespace IDCardFaceMatchHelper64
     {
         private readonly ArcFaceEmbedder _embedder;
         private readonly AntiSpoofingDetector _antiSpoofing;
+        private readonly AntiSpoofingDetectorOnnx _antiSpoofingOnnx;
 
         private readonly float _faceConfThreshold;
 
@@ -20,7 +23,7 @@ namespace IDCardFaceMatchHelper64
 
             string antiSpoofPrototxt = EmbeddedResourceHelper.ExtractToTemp("deploy_Squeeze.prototxt");
             string antiSpoofModel = EmbeddedResourceHelper.ExtractToTemp("train_add_data_iter_100000.caffemodel");
-
+            string anitSpoofModelOnnx = EmbeddedResourceHelper.ExtractToTemp("AntiSpoofing_print-replay_1.5_128.onnx");
             _faceConfThreshold = (float)faceConfThreshold;
 
             _embedder = new ArcFaceEmbedder(
@@ -30,12 +33,14 @@ namespace IDCardFaceMatchHelper64
                 faceNmsIou: 0.35f);
 
             _antiSpoofing = new AntiSpoofingDetector(antiSpoofPrototxt, antiSpoofModel, liveThreshold);
+            _antiSpoofingOnnx = new AntiSpoofingDetectorOnnx(anitSpoofModelOnnx, inputSize: 128,realThreshold: liveThreshold,bboxInc:1.5);
         }
 
         public void Dispose()
         {
             _embedder.Dispose();
             _antiSpoofing.Dispose();
+            _antiSpoofingOnnx.Dispose();
         }
 
         public FaceMatchResult MatchIdToCamera(string idCardPath, string cameraImagePath, double threshold = 0.40)
@@ -70,9 +75,13 @@ namespace IDCardFaceMatchHelper64
 
             if (bestIndex >= 0)
             {
-                var antiSpoof = _antiSpoofing.Evaluate(cameraBgr, bestRect);
-                isLiveFace = antiSpoof.isLive;
-                antiSpoofConfidence = antiSpoof.confidence;
+                //var antiSpoof = _antiSpoofing.Evaluate(cameraBgr, bestRect);
+                //isLiveFace = antiSpoof.isLive;
+                //antiSpoofConfidence = antiSpoof.confidence;
+
+                var r = _antiSpoofingOnnx.Evaluate(cameraBgr, bestRect);
+                 isLiveFace = r.label == AntiSpoofingDetectorOnnx.SpoofLabel.Real;
+                 antiSpoofConfidence = r.scoreReal;
             }
 
             bool isSame = bestSim >= threshold && isLiveFace;

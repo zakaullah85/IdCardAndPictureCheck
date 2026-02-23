@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="models\AntiSpoofing_print-replay_1.5_128.onnx" />
     <None Remove="models\scrfd.onnx" />
   </ItemGroup>
 
@@ -36,6 +37,7 @@
   -->
   <!-- Embed ONNX model + cascade as resources -->
   <ItemGroup>
+    <EmbeddedResource Include="models\AntiSpoofing_print-replay_1.5_128.onnx" />
     <EmbeddedResource Include="models\arcface.onnx" />
     <EmbeddedResource Include="models\deploy_Squeeze.prototxt" />
     <EmbeddedResource Include="models\scrfd.onnx" />

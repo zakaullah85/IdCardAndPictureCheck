@@ -15,13 +15,13 @@ namespace FaceMatchClient
         {
             button1.Enabled = false;
             string helperExe = @"D:\Projects\IdCardAndPictureCheck\FaceMatchClient\IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.exe";
-            string idCardPath = @"D:\images\ID-card.jpeg";
-            string cameraPath = @"D:\images\spoof5.jpeg";
+            string idCardPath = @"D:\images\ID-card8.jpeg";
+            string cameraPath = @"D:\images\client8.jpg";
             pictureBox2.ImageLocation = cameraPath;
             pictureBox3.ImageLocation = idCardPath;
             double faceConfThreshold = 0.5;
             double threshold = 0.52;
-            double liveThreshold = 0.999999;
+            double liveThreshold = 0.003;
 
             var resp = await FaceMatchService.RunFaceMatchAsync(helperExe, idCardPath, cameraPath, faceConfThreshold, threshold,liveThreshold);
 
@@ -71,7 +71,9 @@ namespace FaceMatchClient
             if (resp.AnnotatedImageBase64 != null)
             {
                 var bmp = Utils.ImageConverter.Base64ToBitmap(resp.AnnotatedImageBase64);
-                bmp.Save(@"D:\images\annotated_from_client.jpg");
+                pictureBox1.Image = bmp;
+                bmp.Save($@"D:\images\annotated_images\annotated_{DateTime.Now.Ticks.ToString()}.jpg");
+               
             }
         }
 

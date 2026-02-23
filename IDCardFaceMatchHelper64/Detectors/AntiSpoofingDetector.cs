@@ -3,7 +3,7 @@ using System.IO;
 using OpenCvSharp;
 using OpenCvSharp.Dnn;
 
-namespace IDCardFaceMatchHelper64
+namespace IDCardFaceMatchHelper64.Detectors
 {
     public sealed class AntiSpoofingDetector : IDisposable
     {
