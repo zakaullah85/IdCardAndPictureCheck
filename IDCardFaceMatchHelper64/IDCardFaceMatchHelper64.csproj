@@ -39,8 +39,6 @@
   <ItemGroup>
     <EmbeddedResource Include="models\AntiSpoofing_print-replay_1.5_128.onnx" />
     <EmbeddedResource Include="models\arcface.onnx" />
-    <EmbeddedResource Include="models\deploy_Squeeze.prototxt" />
     <EmbeddedResource Include="models\scrfd.onnx" />
-    <EmbeddedResource Include="models\train_add_data_iter_100000.caffemodel" />
   </ItemGroup>
 </Project>

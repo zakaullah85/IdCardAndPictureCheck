@@ -11,7 +11,7 @@ namespace IDCardFaceMatchHelper64
     public class IdLiveFaceMatcher : IDisposable
     {
         private readonly ArcFaceEmbedder _embedder;
-        private readonly AntiSpoofingDetector _antiSpoofing;
+       // private readonly AntiSpoofingDetector _antiSpoofing;
         private readonly AntiSpoofingDetectorOnnx _antiSpoofingOnnx;
 
         private readonly float _faceConfThreshold;
@@ -21,8 +21,8 @@ namespace IDCardFaceMatchHelper64
             string arcfacePath = EmbeddedResourceHelper.ExtractToTemp("arcface.onnx");
             string scrfdPath = EmbeddedResourceHelper.ExtractToTemp("scrfd.onnx");
 
-            string antiSpoofPrototxt = EmbeddedResourceHelper.ExtractToTemp("deploy_Squeeze.prototxt");
-            string antiSpoofModel = EmbeddedResourceHelper.ExtractToTemp("train_add_data_iter_100000.caffemodel");
+            //string antiSpoofPrototxt = EmbeddedResourceHelper.ExtractToTemp("deploy_Squeeze.prototxt");
+            //string antiSpoofModel = EmbeddedResourceHelper.ExtractToTemp("train_add_data_iter_100000.caffemodel");
             string anitSpoofModelOnnx = EmbeddedResourceHelper.ExtractToTemp("AntiSpoofing_print-replay_1.5_128.onnx");
             _faceConfThreshold = (float)faceConfThreshold;
 
@@ -32,14 +32,14 @@ namespace IDCardFaceMatchHelper64
                 faceConfThreshold: _faceConfThreshold,
                 faceNmsIou: 0.35f);
 
-            _antiSpoofing = new AntiSpoofingDetector(antiSpoofPrototxt, antiSpoofModel, liveThreshold);
+            //_antiSpoofing = new AntiSpoofingDetector(antiSpoofPrototxt, antiSpoofModel, liveThreshold);
             _antiSpoofingOnnx = new AntiSpoofingDetectorOnnx(anitSpoofModelOnnx, inputSize: 128,realThreshold: liveThreshold,bboxInc:1.5);
         }
 
         public void Dispose()
         {
             _embedder.Dispose();
-            _antiSpoofing.Dispose();
+            //_antiSpoofing.Dispose();
             _antiSpoofingOnnx.Dispose();
         }
 

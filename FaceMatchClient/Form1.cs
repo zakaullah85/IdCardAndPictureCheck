@@ -15,8 +15,8 @@ namespace FaceMatchClient
         {
             button1.Enabled = false;
             string helperExe = @"D:\Projects\IdCardAndPictureCheck\FaceMatchClient\IDFaceMatchHelper\win-x64\IDCardFaceMatchHelper64.exe";
-            string idCardPath = @"D:\images\ID-card8.jpeg";
-            string cameraPath = @"D:\images\client8.jpg";
+            string idCardPath = @"D:\images\ID-card29.jpeg";
+            string cameraPath = @"D:\images\client29.jpeg";
             pictureBox2.ImageLocation = cameraPath;
             pictureBox3.ImageLocation = idCardPath;
             double faceConfThreshold = 0.5;
