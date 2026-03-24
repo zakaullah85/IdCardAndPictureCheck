@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 
@@ -44,9 +45,9 @@ namespace IDCardFaceMatchHelper64
 
             string idCardPath = args[0];
             string cameraImagePath = args[1];
-            double threshold = double.Parse(args[2]);
-            double faceConfThreshold = double.Parse(args[3]);
-            double liveThreshold = double.Parse(args[4]);
+            double threshold = ParseDoubleSafe(args[2]);
+            double faceConfThreshold = ParseDoubleSafe(args[3]);
+            double liveThreshold = ParseDoubleSafe(args[4]);
 
             try
             {
@@ -97,6 +98,20 @@ namespace IDCardFaceMatchHelper64
                 Console.WriteLine(JsonSerializer.Serialize(errorResp, FaceMatchJsonContext.Default.FaceMatchResponse));
                 return 2;
             }
+        }
+
+        static double ParseDoubleSafe(string input)
+        {
+            string original = input;
+
+            input = input
+                .Replace('٫', '.')
+                .Replace(',', '.');
+
+            if (double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
+                return result;
+
+            throw new FormatException($"Invalid numeric format. Original: '{original}', Normalized: '{input}'");
         }
     }
 }

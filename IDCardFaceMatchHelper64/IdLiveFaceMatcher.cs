@@ -105,7 +105,7 @@ namespace IDCardFaceMatchHelper64
                     int padding = 4;
                     int gap = 6;
 
-                    string labelLeft = $"face con.{_faceConfThreshold:F6}";
+                    string labelLeft = $"face con.{_faceConfThreshold:F2}";
                     string topLabel = isLiveFace ? $"Live {antiSpoofConfidence:F6}" : $"Spoof {antiSpoofConfidence:F6}";
                     string bottomLabel = $"Sim {bestSim:F6}";
 
