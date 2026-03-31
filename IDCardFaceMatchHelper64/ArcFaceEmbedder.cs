@@ -58,7 +58,7 @@ namespace IDCardFaceMatchHelper64
             if (det is null)
                 throw new Exception("No face detected.");
 
-            var padded = PadRect(det.Value.Rect, bgr.Width, bgr.Height, 0.2);
+            var padded = PadRect(det.Value.Rect, bgr.Width, bgr.Height, 0.1);
 
             using var faceBgr = new Mat(bgr, padded).Clone();
             using var faceRgb = new Mat();
